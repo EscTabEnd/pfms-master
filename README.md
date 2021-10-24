@@ -8,16 +8,6 @@ pfms，中文名称：私人文件管理系统，它是基于 [EasyFS](https://g
 1. Windows
 2. Linux
 
-## 预览
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/01.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/02.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/03.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/04.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/05.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/06.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/07.png)
-![image](https://raw.githubusercontent.com/MrCinco/images/master/pfms/08.png)
-
 ## 使用场景
 私人文件在线管理，主要功能有：  
 文件上传、下载、查看、删除、重命名、新建文件夹、定时分享文件、人员部门管理等...
