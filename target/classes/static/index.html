@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>文件管理系统</title>
+    <link rel="stylesheet" href="assets/layui/css/layui.css">
+    <link rel="stylesheet" href="assets/common.css">
+    <link rel="shorcut icon" href="assets/images/logo.png">
+</head>
+
+<body>
+<div class="header">
+    <div class="layui-container">
+        <div class="layui-logo">
+            <img src="assets/images/logo.png"/><cite><span><a href="/fms/">文件管理系统</a></span></cite>
+        </div>
+        <div class="span_bth">
+            <span id="logout" class="logout">退出</span>
+            <span id="userManage" class="userManage ">部门/人员管理</span>
+            <span id="username" class="username "></span>
+<!--            <button id="publicDesc" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon layui-icon-windows"></i>公共桌面</button>-->
+            <span>
+                <button id="publicDesc" class="layui-btn layui-btn-sm layui-btn-normal icon-btn"><i class="layui-icon layui-icon-layer"></i>公共桌面
+                </button>
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="layui-container" style="padding-top: 15px;">
+    <div class="layui-card">
+        <div class="layui-card-header">当前位置：<span id="tvFP" title="1" data="" data-id="" path=""></span></div>
+        <div class="layui-card-body">
+            <div class="btnDiv">
+                <button id="btnBack" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon">&#xe65c;</i>返回上级
+                </button>
+                <button id="btnRefresh" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon">&#xe669;</i>刷新
+                </button>
+                <button id="btnUpload" class="layui-btn layui-btn-sm layui-btn-normal icon-btn"><i class="layui-icon">&#xe681;</i>上传文件
+                </button>
+                <button id="btnNewDir" class="layui-btn layui-btn-sm layui-btn-normal icon-btn"><i class="layui-icon layui-icon-add-circle"></i>新建文件夹
+                </button>
+                <button id="btnDelDir" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon layui-icon-delete"></i>刪除目录
+                </button>
+                <button id="btnRname" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon layui-icon-edit"></i>重命名目录
+                </button>
+                <button id="btnmove" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon layui-icon-release"></i>移动目录
+                </button>
+                <button id="btnDirAttr" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon layui-icon-about"></i>目录属性
+                </button>
+                <div class="search-warp">
+                    <div class="clear-search">X</div>
+                    <input id="search" class="layui-input " placeholder="文件名查询" style="display: inline-block;width: 170px;height: 30px;"><button id="btnSearch" class="layui-btn layui-btn-sm layui-btn-primary icon-btn" style="margin-left: 10px;margin-top: 10px;"><i class="layui-icon layui-icon-search"></i>搜索 </button>
+                    <div class="search-res">
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="file-list"></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 下拉菜单 -->
+<div class="dropdown-menu dropdown-anchor-top-left" id="dropdownFile">
+    <div class="dropdown-anchor"></div>
+    <ul>
+        <li><a id="open"><i class="layui-icon layui-icon-file"></i>&emsp;查看&emsp;</a></li>
+        <li id="down_li"><a id="down"><i class="layui-icon layui-icon-download-circle"></i>&emsp;下载&emsp;</a></li>
+        <li id="del_li">
+            <a id="del" style="color: red !important;">
+                <i class="layui-icon layui-icon-delete" style="font-size: 19px;"></i>&nbsp;&nbsp;&nbsp;删除&emsp;
+            </a>
+        </li>
+        <li id="share_li"><a id="share"><i class="layui-icon layui-icon-share"></i>&emsp;分享&emsp;</a></li>
+        <li id="rename_li"><a id="rename"><i class="layui-icon layui-icon-edit"></i>&emsp;重命名&emsp;</a></li>
+        <li id="attr_li"><a id="attr"><i class="layui-icon layui-icon-about"></i>&emsp;属性&emsp;</a></li>
+        <li id="move_li"><a id="move"><i class="layui-icon layui-icon-release"></i>&emsp;移动到&emsp;</a></li>
+    </ul>
+</div>
+
+
+<!-- 渲染模板 -->
+<script id="fileTpl" type="text/html">
+    {{#  layui.each(d, function(index, item){ }}
+    <div class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}" data-name="{{item.name}}" data-preview="{{item.preview}}">
+        <div class="file-list-img {{item.hasSm?'media':''}}">
+            {{# if(item.hasSm){ }}
+            <img src="{{item.smUrl}}"/>
+            {{# }else{ }}
+            <img src="assets/images/fti/{{item.type}}.png"/>
+            {{# } }}
+        </div>
+        <div class="file-list-name">{{item.name}}</div>
+    </div>
+    {{#  }); }}
+    {{# if(d.length<=0){ }}
+    <div class="list-empty">
+        <i class="layui-icon layui-icon-face-surprised"></i>
+        <div>没有文件</div>
+    </div>
+    {{# } }}
+</script>
+<script id="searchFiles" type="text/html">
+    <ul id="search-ul">
+        {{#  layui.each(d, function(index, item){ }}
+        <li class="search-file-list-item" data-dir="{{item.type}}" data-url="{{item.url}}" data-name="{{item.name}}" data-type="{{item.type}}">
+            {{# if(item.type){ }}
+            <img src="assets/images/fti/{{item.type}}.png"/>
+            {{# } }}
+            <div class="file-list-name">{{item.name}}</div>
+            <div class="file-list-url">{{item.url}}</div>
+        </li>
+        {{#  }); }}
+        {{# if(d.length<=0){ }}
+        <div class="list-empty">
+            <i class="layui-icon layui-icon-face-surprised"></i>
+            <div>没有文件</div>
+        </div>
+        {{# } }}
+    </ul>
+</script>
+<script type="text/javascript" src="assets/layui/layui.js"></script>
+<script type="text/javascript" src="assets/clipboard.min.js"></script>
+<script type="text/javascript" src="assets/config.js"></script>
+<script>
+    layui.use(['jquery', 'layer', 'element', 'upload', 'laytpl', 'util'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var element = layui.element;
+        var upload = layui.upload;
+        var laytpl = layui.laytpl;
+        var util = layui.util;
+
+        $.get(baseServer + 'api/initFP?math='+Math.random(), null, function (res) {
+            layer.closeAll('loading');
+            if (res.code == "1") {
+                $('#tvFP').text(res.tvFP);
+                $('#tvFP').attr("title",res.title);
+                $('#username').text("用户："+(res.data =="/"?"root":res.data));
+                $('#tvFP').attr("data",res.data);
+                $('#tvFP').attr("data-id",res.data_id);
+                $('#tvFP').attr("path",res.path);
+
+                if(res.data !="/"){
+                    $('#userManage').hide();
+                }
+
+                if("1" == res.title){//员工不删除文件夹和文件
+                    $('#btnDelDir').hide();
+                    $('#btnRname').hide();
+                    $('#del_li').hide();
+                    $('#rename_li').hide();
+                    $('#down_li').hide();
+                    $('#btnmove').hide();
+                    $('#share_li').hide();
+                    $('#btnNewDir').hide();
+                }else if("2" == res.title){//二级员工
+                    $('#btnDelDir').hide();
+                    $('#btnRname').hide();
+                    $('#btnmove').hide();
+                    $('#del_li').hide();
+                    $('#rename_li').hide();
+                    $('#share_li').hide();
+                }else if("3" == res.title){
+                    $('#del_li').hide();
+                    $('#btnDelDir').hide();
+                    $('#share_li').hide();
+                }
+                renderList();
+            } else {
+                $('#tvFP').text("/");
+                $('#tvFP').attr("title","0");
+                $('#tvFP').attr("data","");
+            }
+        });
+
+
+
+        // 渲染文件列表
+        window.renderList = function(dir) {
+            if ($('#tvFP').text() == '/' ||  '1，2'.indexOf( $('#tvFP').attr("title")) !=-1 || ($('#tvFP').text().substring(1).indexOf("/") == -1)) {
+                $('#btnDelDir').hide();
+                $('#btnRname').hide();
+            } else if($('#tvFP').attr("title") == "3"){
+                $('#btnDelDir').hide();
+                $('#del_li').hide();
+            }else if($('#tvFP').text().substring(1).indexOf("/") != -1){
+                $('#btnDelDir').show();
+                $('#btnRname').show();
+            }
+            //不能移动自己根目录
+            if($('#tvFP').text() == $('#tvFP').attr("path")){
+                $('#btnmove').hide();
+                $('#btnRname').hide();
+            }else if($('#tvFP').attr("title") == "3"){
+                $('#btnmove').show();
+                $('#btnRname').show();
+            }
+            if (!dir) {
+                dir = $('#tvFP').text();
+            }
+            if(dir == ""){
+                dir = "/"+$('#tvFP').attr("data");
+            }
+            layer.load(2);
+            $.get(baseServer + 'api/list?math='+Math.random(), {
+                dir: dir
+            }, function (res) {
+                layer.closeAll('loading');
+                if (res.code == 200) {
+                    for (var i = 0; i < res.data.length; i++) {
+                        res.data[i].url = baseServer + 'file/' + res.data[i].url;
+                        res.data[i].smUrl = baseServer + 'file/sm?p=' + res.data[i].smUrl;
+                    }
+                    laytpl(fileTpl.innerHTML).render(res.data, function (html) {
+                        $('.file-list').html(html);
+                    });
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            });
+        }
+
+
+
+        // 上传文件事件
+        upload.render({
+            elem: '#btnUpload',
+            data: {},
+            url: baseServer + 'file/upload?math='+Math.random(),
+            before:function(obj){
+                // 动态传参
+                this.data.curPos = $('#tvFP').text();
+            },
+            choose: function (obj) {
+                layer.load(2);
+            },
+            done: function (res, index, upload) {
+                layer.closeAll('loading');
+                if (res.code != 200) {
+                    layer.msg(res.msg, {icon: 2});
+                } else {
+                    layer.msg(res.msg, {icon: 1});
+                    renderList();
+                }
+            },
+            error: function () {
+                layer.closeAll('loading');
+                layer.msg('上传失败', {icon: 2});
+            },
+            accept: 'file'
+        });
+
+        // 刷新
+        $('#btnRefresh').click(function () {
+            renderList();
+        });
+
+        var mUrl;
+        // 列表点击事件
+        $('body').on('click', '.file-list-item', function (e) {
+            var isDir = $(this).data('dir');
+            var name = $(this).data('name');
+            var preview = $(this).data('preview');
+            mUrl = $(this).data('url');
+            $('#copy').attr('data-clipboard-text', mUrl);
+            if (isDir) {
+                var cDir = $('#tvFP').text();
+                cDir += (cDir == '/' ? name : ('/' + name));
+                $('#tvFP').text(cDir);
+                renderList(cDir);
+            } else {
+                var $target = $(this).find('.file-list-img');
+                $('#dropdownFile').css({
+                    'top': $target.offset().top + 90,
+                    'left': $target.offset().left + 25
+                });
+                $('#dropdownFile').addClass('dropdown-opened');
+                if (!preview) {
+                    $('#open').hide();
+                } else {
+                    $('#open').show();
+                }
+                if (e !== void 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        });
+        $('body').on('click', '.search-file-list-item', function (e) {
+            var url = $(this).data('url');
+            url = "/"+url;
+            url = url.substring(0,url.lastIndexOf("/"));
+            $("#tvFP").text(url);
+            $("#search").val("");
+            $('.search-res').css("display","none");
+            renderList();
+        });
+        // 返回上级
+        $('#btnBack').click(function () {
+            var cDir = $('#tvFP').text();
+            var title = $('#tvFP').attr("title");
+            var curname = $('#tvFP').attr("data");
+            var path = $('#tvFP').attr("path");
+
+            if (cDir == '/'+$('#tvFP').attr("data") || cDir == '/') {
+                layer.msg('已经是根目录')
+            } else {
+                if("1,2".indexOf(title) !=-1 && cDir == path){
+                    layer.msg('已经是根目录')
+                    return;
+                }
+                if("3" == title &&  cDir == path.replace("/"+curname,"")){
+                    layer.msg('已经是根目录');
+                    return;
+                }
+                cDir = cDir.substring(0, cDir.lastIndexOf('/'));
+                if (!cDir ) {
+                    cDir = '/';
+                    // layer.msg('已经是根目录');
+                }
+                $('#tvFP').text(cDir);
+                renderList(cDir);
+            }
+        });
+
+        // 点击空白隐藏下拉框
+        $('html').off('click.dropdown').on('click.dropdown', function () {
+            $('#copy').attr('data-clipboard-text', '');
+            $('#dropdownFile').removeClass('dropdown-opened');
+        });
+
+        // 查看
+        $('#open').click(function () {
+            var fullName = mUrl.substring(mUrl.indexOf('/file/') + 6);
+            window.open(encodeURI(baseServer + "file?p=" + fullName + "&d=0"), '_blank');
+        });
+
+        // 下载
+        $('#down').click(function () {
+            var fullName = mUrl.substring(mUrl.indexOf('/file/') + 6);
+            window.open(encodeURI(baseServer + "file?p=" + fullName + "&d=1"), '_blank');
+        });
+
+        $("#search").change(function(){
+            var text = $("#search").val();
+            if(text == ""){
+                $('.search-res').css("display","none");
+            }else{
+                $.ajax({
+                    url: baseServer + 'api/queryFileByName?math=' + Math.random(),
+                    type: 'get',
+                    data: {filename:text,curPos:$("#tvFP").text()},//向服务端发送删除的id
+                    success: function (res) {
+                        if(res.code == "1"){
+                            //2秒后调用父类的刷新页面
+                            laytpl(searchFiles.innerHTML).render(res.data, function (html) {
+                                $('.search-res').html(html);
+                                $('.search-res').css("display","block");
+                            });
+                        }else{
+                            layer.msg(res.msg, {icon: 2});
+                        }
+                    },error:function(res){
+                        layer.msg("未查询到相关文件，服务器异常", {icon: 2});
+                        layer.closeAll('loading');
+                    }
+                })
+            }
+        });
+        // 删除
+        $('#del').click(function () {
+            layer.confirm('确定要删除此文件吗？', function () {
+                layer.load(2);
+                $.get(baseServer + 'api/del?math='+Math.random(), {
+                    file: mUrl.substring(mUrl.indexOf('/file/') + 6)
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code == 200) {
+                        layer.msg(res.msg, {icon: 1});
+                        renderList();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                });
+            });
+        });
+
+        // 重命名
+        $('#rename').click(function () {
+            layer.prompt({
+                formType: 0,
+                value: mUrl.substr(mUrl.lastIndexOf('/') + 1),
+                title: '新文件名'
+            }, function(value, index, elem){
+                var oldFile = mUrl.substring(mUrl.indexOf('/file/') + 6);
+                var newFile = mUrl.substr(7, mUrl.lastIndexOf('/') - 6) + value;
+                layer.load(2);
+                $.get(baseServer + 'api/rename?math='+Math.random(), {
+                    oldFile: oldFile,
+                    newFile: newFile
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code == 200) {
+                        layer.msg(res.msg, {icon: 1});
+                        renderList();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                });
+                layer.close(index);
+            });
+        });
+
+        // 分享
+        $('#share').click(function () {
+            layer.prompt({
+                formType: 0,
+                value: '30',
+                title: '设置时间(分钟)'
+            }, function(value, index, elem){
+                var file = mUrl.substring(mUrl.indexOf('/file/') + 6);
+                layer.load(2);
+                $.post(baseServer + 'api/share?math='+Math.random(), {
+                    file: file,
+                    time: value
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code == 200) {
+                        layer.open({
+                            title: res.msg,
+                            content: '链接：' + res.url,
+                            btn: ['复制链接'],
+                            btn1: function(index, layero){
+                                var clipboard = new ClipboardJS(".layui-layer-btn0",{
+                                    text: function () {
+                                        return res.url;
+                                    }
+                                });
+                                clipboard.on('success', function (e) {
+                                    e.clearSelection();
+                                    layer.msg('分享地址已复制', {icon: 1});
+                                });
+                                clipboard.on('error', function (e) {
+                                    layer.msg('复制失败，请手动复制', {icon: 2});
+                                });
+                            }
+                        });
+                    }
+                });
+                layer.close(index);
+            });
+        });
+
+        //目录属性
+        $("#btnDirAttr").click(function(){
+            var url = $('#tvFP').text();
+            $.ajax({
+                url:baseServer+'api/getAttr?math='+Math.random(),
+                type:'get',
+                data:{fileurl:url,cururl:url},//向服务端发送删除的id
+                success:function(res){
+                    layer.closeAll('loading');
+                    if(res.code == "1"){
+                        var msg = '目录名：'+res.attr.curname+"<br/>目录大小："+res.attr.size+"<br/>上传者："+res.attr.uname+"<br/>上传时间："+res.attr.time;
+                        layer.alert(msg, {
+                            skin: 'layer-ext-moon' //该皮肤由layer.seaning.com友情扩展。关于皮肤的扩展规则，去这里查阅
+                        });
+                    }
+                },error:function(res){
+                    layer.msg("获取属性信息失败，服务器异常", {icon: 2});
+                    layer.closeAll('loading');
+                }
+            });
+        });
+
+        //文件属性
+        $("#attr").click(function(){
+            $.ajax({
+                url:baseServer+'api/getAttr?math='+Math.random(),
+                type:'get',
+                data:{fileurl:mUrl.substring(mUrl.indexOf('/file/') + 6),cururl:mUrl},//向服务端发送删除的id
+                success:function(res){
+                    layer.closeAll('loading');
+                    if(res.code == "1"){
+                        var msg = '文件名：'+res.attr.curname+"<br/>文件大小："+res.attr.size+"<br/>上传者："+res.attr.uname+"<br/>上传时间："+res.attr.time;
+                        layer.alert(msg, {
+                            skin: 'layer-ext-moon' //该皮肤由layer.seaning.com友情扩展。关于皮肤的扩展规则，去这里查阅
+                        });
+                    }
+                },error:function(res){
+                    layer.msg("获取属性信息失败，服务器异常", {icon: 2});
+                    layer.closeAll('loading');
+                }
+            });
+        });
+
+        $("#move").click(function(){
+            layer.open({
+                type: 2,
+                title: '移动文件到',
+                shadeClose: true,
+                shade: 0.8,
+                area: ['480px', '90%'],
+                content: encodeURI(baseServer+'treeframe?url='+mUrl.substring(mUrl.indexOf('/file/') + 6)+'&math='+Math.random())
+            });
+        });
+        $("#btnmove").click(function(){
+            layer.open({
+                type: 2,
+                title: '移动目录到',
+                shadeClose: true,
+                shade: 0.8,
+                area: ['480px', '90%'],
+                content: encodeURI(baseServer+'treeframe?url='+$('#tvFP').text()+'&math='+Math.random()) //iframe的url
+            });
+        });
+
+        // 选择删除
+        $('#btnSelectDel').click(function () {
+            layer.open({
+                type: 2,
+                title: '选择文件',
+                content: 'fileChoose.html?multi=true',
+                area: ['600px', '420px'],
+                offset: '50px',
+                shade: .1,
+                fixed: false,
+                resize: true,
+                end: function () {
+                    if (typeof(mFsUrls) != "undefined" && mFsUrls.length > 0) {
+                        layer.msg('你选择了：' + JSON.stringify(mFsUrls), {icon: 1});
+                        mFsUrls = undefined;
+                    }
+                }
+            });
+        });
+
+        // 新建文件夹
+        $('#btnNewDir').click(function () {
+            layer.prompt({
+                formType: 0,
+                value: "新建文件夹",
+                title: '文件名'
+            }, function(value, index, elem){
+                var curPos = $('#tvFP').text();
+                layer.load(2);
+                $.get(baseServer + 'api/mkdir?math='+Math.random(), {
+                    curPos: curPos,
+                    dirName: value
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code == 200) {
+                        layer.msg(res.msg, {icon: 1});
+                        renderList();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                });
+                layer.close(index);
+            });
+        });
+
+        // 删除当前目录
+        $('#btnDelDir').click(function () {
+            layer.confirm('将删除此目录下所有文件', {icon: 3, title:'确认'}, function(index){
+                var curPos = $('#tvFP').text().substr(1);
+                layer.load(2);
+                $.get(baseServer + 'api/del?math='+Math.random(), {
+                    file: curPos
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code == 200) {
+                        layer.msg(res.msg, {icon: 1});
+                        renderList();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                });
+                layer.close(index);
+            });
+        });
+
+        // 重命名当前目录
+        $('#btnRname').click(function () {
+            var tvFP = $('#tvFP').text();
+            layer.prompt({
+                formType: 0,
+                value: tvFP,
+                title: '新目录名'
+            }, function(value, index, elem){
+                layer.load(2);
+                $.get(baseServer + 'api/rename?math='+Math.random(), {
+                    oldFile: tvFP.substr(1),
+                    newFile: value.substr(1)
+                }, function (res) {
+                    layer.closeAll('loading');
+                    if (res.code == 200) {
+                        layer.msg(res.msg, {icon: 1});
+                        $('#tvFP').text(res.url);
+                        renderList();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                });
+                layer.close(index);
+            });
+        });
+
+        $(".userManage").click(function(){
+            // window.open(baseServer +"user", '_blank');
+            window.open(baseServer +"department", '_blank');
+        });
+        $("#publicDesc").click(function(){
+            // window.open(baseServer +"user", '_blank');
+            window.open(baseServer +"public?", '_blank');
+        });
+        $(".logout").click(function(){
+            window.open(baseServer +"logout?math="+Math.random(), '_self');
+        });
+
+        $("#btnSearch").click(function(){
+            var search = $("#search").val();
+            if(search){
+                $.ajax({
+                    url: baseServer + 'api/queryFileByName?math=' + Math.random(),
+                    type: 'get',
+                    data: {filename:search,curPos:$("#tvFP").text()},//向服务端发送删除的id
+                    success: function (res) {
+                        if(res.code == "1"){
+                            //2秒后调用父类的刷新页面
+                            laytpl(searchFiles.innerHTML).render(res.data, function (html) {
+                                $('.search-res').html(html);
+                                $('.search-res').css("display","block");
+                            });
+                        }else{
+                            layer.msg(res.msg, {icon: 2});
+                        }
+                    },error:function(res){
+                        layer.msg("未查询到相关文件，服务器异常", {icon: 2});
+                        layer.closeAll('loading');
+                    }
+                })
+            }
+        });
+
+        $('.clear-search').click(function(){
+            $("#search").val("");
+            $('.search-res').css("display","none");
+        });
+
+        $("#username").click(function(){
+            layer.open({
+                //formType: 2,//这里依然指定类型是多行文本框，但是在下面content中也可绑定多行文本框
+                title: '修改密码',
+                area: ['300px', '360px'],
+                content: "<div><p>用户名:</p><input name='uname' data='"+$('#tvFP').attr("data-id")+"' class='layui-input' id='uname' type='text' readonly='true' value='"+$("#username").text().replace("用户：","")+"'></input></div><div><p>新密码:</p><input name='pwd' id='pwd' class='layui-input' type='password'></input></div><div><p>确认密码：</p><input name='repwd' id='repwd' class='layui-input' type='password'><span class='notice'></span>",
+                btn:['确认','取消'],
+                yes: function (index, layero) {
+                    var uname = $('#uname').val();//获取多行文本框的值
+                    var id = $('#uname').attr("data");//获取多行文本框的值
+                    var pwd = $('#pwd').val();//获取多行文本框的值
+                    var repwd = $('#repwd').val();//获取多行文本框的值
+                    if(pwd != repwd){
+                        $(".notice").text("两次输入的密码不一样");
+                        $(".notice").css("color","red");
+                    }else{
+                        //可执行确定按钮事件并把备注信息（即多行文本框值）存入需要的地方
+                        $.ajax({
+                            url:baseServer+'user/update?math='+Math.random(),
+                            type:'get',
+                            data:{'uname':uname,'pwd':pwd,'id':id},//向服务端发送删除的id
+                            success:function(data){
+                                if(data.code == "1"){
+                                    layer.msg("修改成功",{icon:1});
+                                }else{
+                                    layer.msg(data.msg,{icon:5});
+                                }
+                                layer.close(index);
+                            },error:function(error){
+                                layer.msg("修改失败"+error,{icon:5});
+                            }
+                        });
+                    }
+                },
+                no:function(index)
+                {
+                    // alert('您刚才点击了取消按钮');
+                    // layer.close(index);
+                    // return false;//点击按钮按钮不想让弹层关闭就返回false
+                    return false;
+
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

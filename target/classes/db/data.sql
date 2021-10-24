@@ -1,0 +1,2 @@
+INSERT into `user`(uname,pwd,rank,status,did,dname) select 'root','admin','0','1','0','根部门' from user where not exists (select * from user where uname='root' )
+INSERT into `depart`(id,dname,pid,url,nop) select '0','根部门','-1','/','0' from depart where not exists (select * from depart where dname='根部门' )

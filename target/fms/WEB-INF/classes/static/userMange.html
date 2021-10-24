@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>人员管理</title>
+    <link rel="stylesheet" href="assets/layui/css/layui.css">
+    <link rel="stylesheet" href="assets/common.css">
+    <link rel="shorcut icon" href="assets/images/logo.png">
+    <style >
+        #btnAdd{
+            background-color: #009688;
+            color:white;
+        }
+    </style>
+</head>
+
+<body>
+<div class="header">
+    <div class="layui-container">
+        <div class="layui-logo">
+            <img src="assets/images/logo.png"/><cite><span><a href="/">文件管理系统</a></span></cite>
+        </div>
+        <div class="span_bth">
+            <span id="logout" class="logout">退出</span>
+            <span id="username" class="username "></span>
+        </div>
+    </div>
+</div>
+
+<div class="layui-container" style="padding-top: 15px;">
+<!--https://www.layui.com/test/table/demo1.json-->
+
+    <div class="layui-card">
+        <div class="layui-card-body">
+        <!--    <table class="layui-table" lay-data="{url:'/user/list', id:'test3'}" lay-filter="test3">
+                <thead>
+                <tr>
+                    <th lay-data="{type:'checkbox'}"></th>
+                    <th lay-data="{field:'uname', minWidth:180, sort: true}">用户名</th>
+                    <th lay-data="{field:'pwd', edit: 'text', minWidth:180}">密码</th>
+                    <th lay-data="{field:'rank', minWidth:180, edit: 'text'}">级别</th>
+                </tr>
+                </thead>
+            </table>-->
+            <table class="layui-show" id="users" lay-filter="users"></table>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="assets/layui/layui.js"></script>
+<script type="text/javascript" src="assets/clipboard.min.js"></script>
+<script type="text/javascript" src="assets/config.js"></script>
+<script type="text/html" id="rankTpl">
+    {{#  if(d.rank === '1'){ }}
+    <span style="color: #FFFFFF;background-color: #3F3F3F">{{ '员工'}}</span>
+    {{#  } else if(d.rank === '2'){ }}
+    <span style="color: #FFFFFF;background-color: #6482e9">{{ '管理员'}}</span>
+    {{#  }else if(d.rank === '0'){ }}
+    <span style="color: #FFFFFF;background-color: #e94650">{{ '超级管理员'}}</span>
+    {{#  } }}
+</script>
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status === '0'){ }}
+    <span style="color: #FFFFFF;background-color: red;text-decoration:line-through">{{ '无效'}}</span>
+    {{#  }else if(d.status === '1'){ }}
+        {{ '有效' }}
+    {{#  } }}
+</script>
+<script type="text/html" id="addbar">
+
+        <button id="btnAdd" class="layui-btn layui-btn-sm layui-btn-primary icon-btn">新增人员
+            <!--                <button id="btnDel" class="layui-btn layui-btn-sm layui-btn-primary icon-btn">删除人员-->
+        </button>
+    <input  id="search" class='layui-input ' type="text" style="display: inline-block;width: 200px;margin-left: 40px;height: 30px;">
+        <button id="btnSearch" class="layui-btn layui-btn-sm layui-btn-primary" ><i class="layui-icon layui-icon-search"></i>查询</button>
+</script>
+<script  type="text/html" id="tool">
+    <a class="layui-btn layui-btn-normal layui-btn-danger layui-btn-xs" lay-event="delete">禁用</a>
+    <a class="layui-btn layui-btn-normal layui-btn-sm layui-btn-xs" lay-event="use">启用</a>
+</script>
+<script  type="text/javascript" th:inline="none">
+
+    layui.use(['jquery', 'layer','table'], function(){
+        var table = layui.table;
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        table.render({
+            elem: "#users",
+            url: baseServer+'user/list',
+            skin: 'line',
+            toolbar:"#addbar",
+            defaultToolbar: ['filter', 'print', 'exports'],
+            page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                //,curr: 5 //设定初始在第 5 页
+                ,limit:10 //一页显示多少条
+                ,limits:[5,10,100,1000,10000]//每页条数的选择项
+                ,groups: 2 //只显示 2 个连续页码
+                ,first: "首页" //不显示首页
+                ,last: "尾页" //不显示尾页
+            },
+            parseData: function(res){ //将原始数据解析成 table 组件所规定的数据，res为从url中get到的数据
+                var result;
+                if(res.msg){
+                    layer.msg(res.msg,{icon:5});
+                    return ;
+                }
+                if(this.page.curr){
+                    result = res.data.slice(this.limit*(this.page.curr-1),this.limit*this.page.curr);
+                }
+                else{
+                    result=res.data.slice(0,this.limit);
+                }
+                return {
+                    "code": res.code, //解析接口状态
+                    "msg": res.msg, //解析提示文本
+                    "count": res.total, //解析数据长度
+                    "data": result //解析数据列表
+                };
+            },
+            cols: [[{type:"checkbox"},
+                {field: "id", title: "人员编号", minWidth:"100", sort: true},
+                {field: "uname", title: "用户名", minWidth:"100", sort: true},
+                {field: "pwd", title: "密码",edit: "text", minWidth:"100"},
+                {field: "rank", title: "权限", minWidth:"100",templet:"#rankTpl", sort: true},
+                {field: "status", title: "状态",  minWidth:"100",templet: '#statusTpl', sort: true},
+                {field: 'right', title: '操作', toolbar: '#tool'}
+            ]],
+            done: function (res, curr, count) {
+                table = res.data;
+                // $('.layui-laypage-count').text("共"+res.data.length+" 条");
+            }
+        });
+
+
+        $("#btnSearch").click(search);
+
+        function search(){
+            var table = layui.table;
+            table.reload('users', {
+                where : {
+                    search: $("#search").val(),
+                },url: baseServer+'user/searchUser'
+                ,method: 'post'
+                ,page:{
+                    curr :0
+                },done(res, curr, count){
+                    table = res.data;
+                    $("#btnSearch").click(search);
+                }
+            });
+        }
+
+        $.get(baseServer + 'api/initFP?math='+Math.random(), null, function (res) {
+            layer.closeAll('loading');
+            if (res.code == "1") {
+                $('#username').text("用户：" + (res.data == "/" ? "root" : res.data));
+                $('#tvFP').attr("data", res.data);
+                $('#tvFP').attr("data-id", res.data_id);
+            }
+
+        });
+
+
+
+            //监听单元格编辑
+        table.on('edit(users)', function(obj){
+            var value = obj.value //得到修改后的值
+                ,data = obj.data //得到所在行所有键值
+                ,field = obj.field; //得到字段
+            $.ajax({
+                url:baseServer+'user/update',
+                type:'get',
+                data:{'uname':data.uname,'id':data.id,'pwd':data.pwd},//向服务端发送删除的id
+                success:function(data){
+                    if(data.code == "1"){
+                        // obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
+                        layer.msg("更新成功",{icon:1});
+                        $(".layui-laypage-btn")[0].click();//刷新表格，用模拟分页按钮点击实现
+                    }else{
+                        layer.msg(data.msg,{icon:5});
+                    }
+                }
+            });
+        });
+
+        table.on('tool(users)', function(obj){ //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            var tr = obj.tr; //获得当前行 tr 的DOM对象
+            if(layEvent === 'delete'){ //删除
+                layer.confirm('真的禁用用户【'+data.uname+"】吗?", function(index){
+                    var status = data.status;
+                    if("1" == status){
+                        //有效状态才能禁用
+                        //console.log(data.p_id);
+                        //向服务端发送删除指令
+                        $.ajax({
+                            url:baseServer+'user/del',
+                            type:'get',
+                            data:{'uname':data.uname,'id':data.id,'status':"0"},//向服务端发送删除的id
+                            success:function(data){
+                                console.log(data);
+                                if(data.code == "1"){
+                                    // obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
+                                    $(".layui-laypage-btn")[0].click();//刷新表格，用模拟分页按钮点击实现
+                                    layer.msg("禁用成功",{icon:1});
+                                }else{
+                                    layer.msg(data.msg,{icon:5});
+                                }
+                                    layer.close(index);
+                            }
+                        });
+                    }
+                });
+
+            }else if(layEvent === 'use'){
+                layer.confirm('确认启用【'+data.uname+"】吗?", function(index){
+                    //console.log(data.p_id);
+                   var status = data.status;
+                    if("0" == status){//无效状态，才能启用
+                        //向服务端发送删除指令
+                        $.ajax({
+                            url:baseServer+'user/del',
+                            type:'get',
+                            data:{'uname':data.uname,'id':data.id,'status':"1"},//向服务端发送删除的id
+                            success:function(data){
+                                if(data.code == "1"){
+                                    layer.msg("启用成功",{icon:1});
+                                    $(".layui-laypage-btn")[0].click();//刷新表格，用模拟分页按钮点击实现
+                                }
+                                else{
+                                    layer.msg(data.msg,{icon:5});
+                                }
+                                    layer.close(index);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+
+
+        $(".logout").click(function(){
+            window.open(baseServer +"logout?math="+Math.random(), '_self');
+        });
+
+
+
+        $("#btnDel").click(function(){
+
+        });
+
+        $('#btnAdd').click(function () {
+            layer.open({
+                //formType: 2,//这里依然指定类型是多行文本框，但是在下面content中也可绑定多行文本框
+                title: '新增人员',
+                area: ['300px', '340px'],
+                content: "<div><p>用户名:</p><input name='uname'  class='layui-input' id='uname' type='text'></input></div><div><p>密码:</p><input name='pwd' id='pwd' class='layui-input' type='text'></input></div><div><p>类别：</p><input name='rank' type='radio' class='layui-form-radio' value='1' />员工<input name='rank' type='radio' class='layui-form-radio' value='2'  style='margin-left: 10px;'/>管理员</div>",
+                btn:['确认','取消'],
+                yes: function (index, layero) {
+                    var uname = $('#uname').val();//获取多行文本框的值
+                    var pwd = $('#pwd').val();//获取多行文本框的值
+                    var rank= $('input:radio[name="rank"]:checked').val();
+                    //可执行确定按钮事件并把备注信息（即多行文本框值）存入需要的地方
+                    $.ajax({
+                        url:baseServer+'user/add',
+                        type:'get',
+                        data:{'uname':uname,'pwd':pwd,'rank':rank,'status':'0'},//向服务端发送删除的id
+                        success:function(data){
+                            if(data.code == "1"){
+                                layer.msg("新增成功",{icon:1});
+                                $(".layui-laypage-btn")[0].click();//刷新表格，用模拟分页按钮点击实现
+                            }else{
+                                layer.msg(data.msg,{icon:5});
+                            }
+                                layer.close(index);
+                        },error:function(error){
+                            console.log(error);
+                            layer.msg("新增失败2"+error,{icon:5});
+                        }
+                    });
+                },
+                no:function(index)
+                {
+                    // alert('您刚才点击了取消按钮');
+                    layer.close(index);
+                    // return false;//点击按钮按钮不想让弹层关闭就返回false
+
+                }
+            });
+        });
+
+
+/*      //批量操作
+        var array = [];
+        table.on('checkbox(test3)', function (obj) {
+            // console.log(obj.tr) //得到当前行元素对象
+            var tr = obj.tr; //得到当前点击复选框的行元素对象
+            if (obj.type == 'all') { //点击全选按钮触发此处
+                var len = array.length;
+                array.splice(0, len); //全选后删除数组项，重新添加全选的dom元素
+                array.push(obj.tr.prevObject[0]);
+            }
+            else {
+                if (obj.checked) { //多选框被选中则添加dom元素到数组
+                    array.push(tr);
+                } else {//取消多选框的选中则在数组中删除自己
+                    var indexs = obj.tr[0].rowIndex;  //获取取消选中的元素对象下标
+                    array.forEach((item, index) => {
+                        //当数组中任意一个元素的rowIndex值与取消复选框的元素对象属性rowIndex的下标值相等，则在数组中删除该元素
+                        if (item[0].rowIndex == indexs) {
+                            array.splice(index, 1);
+                        }
+                    })
+                }
+            }
+            table.on('toolbar(test3)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                // console.log(checkStatus);
+                switch (obj.event) {
+                    case 'add':
+                        layer.msg('添加');
+                        break;
+                    case 'delete':
+                        layer.msg('删除');
+
+                        array.forEach((item) => {
+                            item.remove(); //删除dom结构
+                            // obj.checked = 'false';
+                        })
+                        break;
+                    case 'update':
+                        layer.msg('编辑');
+                        break;
+                };
+            });
+        });*/
+
+
+    });
+
+</script>
+</body>
+</html>
